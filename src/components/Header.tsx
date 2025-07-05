@@ -1,6 +1,7 @@
 
 import { MapPin, Users, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export const Header = () => {
   return (
@@ -31,6 +32,7 @@ export const Header = () => {
             <FileText className="h-4 w-4 mr-2" />
             Laporan
           </Button>
+          <LogoutButton />
         </div>
       </div>
     </header>
