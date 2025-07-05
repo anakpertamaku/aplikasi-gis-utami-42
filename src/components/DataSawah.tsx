@@ -36,6 +36,11 @@ interface Sawah {
   musimTanam: string
   hasilPanen: number
   statusTanam: string
+  tanggalTanam?: string
+  tanggalPanen?: string
+  irigasi?: string
+  jenisLahan?: string
+  catatan?: string
 }
 
 export const DataSawah = () => {
@@ -50,7 +55,12 @@ export const DataSawah = () => {
       jenisVarietas: "IR64",
       musimTanam: "Gadu 2024",
       hasilPanen: 8.2,
-      statusTanam: "Panen"
+      statusTanam: "Panen",
+      tanggalTanam: "2024-01-15",
+      tanggalPanen: "2024-05-20",
+      irigasi: "Teknis",
+      jenisLahan: "Sawah Irigasi",
+      catatan: "Hasil panen memuaskan, kualitas gabah baik"
     },
     {
       id: 2,
@@ -61,7 +71,12 @@ export const DataSawah = () => {
       jenisVarietas: "Ciherang",
       musimTanam: "Rendeng 2024",
       hasilPanen: 6.5,
-      statusTanam: "Tanam"
+      statusTanam: "Tanam",
+      tanggalTanam: "2024-11-01",
+      tanggalPanen: "2025-03-15",
+      irigasi: "Semi Teknis",
+      jenisLahan: "Sawah Irigasi",
+      catatan: "Pertumbuhan normal, perlu pupuk tambahan"
     },
     {
       id: 3,
@@ -72,7 +87,12 @@ export const DataSawah = () => {
       jenisVarietas: "Inpari 32",
       musimTanam: "Gadu 2024",
       hasilPanen: 10.1,
-      statusTanam: "Panen"
+      statusTanam: "Panen",
+      tanggalTanam: "2024-02-01",
+      tanggalPanen: "2024-06-10",
+      irigasi: "Teknis",
+      jenisLahan: "Sawah Irigasi",
+      catatan: "Hasil tertinggi musim ini, varietas unggul"
     },
     {
       id: 4,
@@ -83,7 +103,12 @@ export const DataSawah = () => {
       jenisVarietas: "IR64",
       musimTanam: "Rendeng 2024",
       hasilPanen: 7.8,
-      statusTanam: "Vegetatif"
+      statusTanam: "Vegetatif",
+      tanggalTanam: "2024-10-15",
+      tanggalPanen: "2025-02-28",
+      irigasi: "Sederhana",
+      jenisLahan: "Sawah Tadah Hujan",
+      catatan: "Bergantung curah hujan, perlu monitoring"
     },
   ])
 
@@ -94,36 +119,67 @@ export const DataSawah = () => {
   const [sawahToDelete, setSawahToDelete] = useState<Sawah | null>(null)
 
   const formFields: FormField[] = [
-    { name: "nama", label: "Nama Sawah", type: "text", required: true, placeholder: "Contoh: Sawah Pak Budi - Blok A" },
-    { name: "petani", label: "Nama Petani", type: "text", required: true, placeholder: "Nama pemilik sawah" },
-    { name: "luas", label: "Luas (Ha)", type: "number", required: true, placeholder: "Luas dalam hektar" },
-    { name: "koordinat", label: "Koordinat", type: "text", required: true, placeholder: "Contoh: -7.2575, 112.7521" },
+    { name: "nama", label: "Nama/Kode Sawah", type: "text", required: true, placeholder: "Contoh: Sawah Pak Budi - Blok A" },
+    { name: "petani", label: "Nama Petani Pemilik", type: "text", required: true, placeholder: "Nama pemilik sawah" },
+    { name: "luas", label: "Luas Lahan (Ha)", type: "number", required: true, placeholder: "Luas dalam hektar", step: "0.1" },
+    { name: "koordinat", label: "Koordinat GPS", type: "text", required: true, placeholder: "Contoh: -7.2575, 112.7521" },
+    { 
+      name: "jenisLahan", 
+      label: "Jenis Lahan", 
+      type: "select", 
+      required: true,
+      options: [
+        { value: "Sawah Irigasi", label: "Sawah Irigasi" },
+        { value: "Sawah Tadah Hujan", label: "Sawah Tadah Hujan" },
+        { value: "Sawah Rawa", label: "Sawah Rawa" },
+        { value: "Sawah Lebak", label: "Sawah Lebak" }
+      ]
+    },
+    { 
+      name: "irigasi", 
+      label: "Sistem Irigasi", 
+      type: "select", 
+      required: true,
+      options: [
+        { value: "Teknis", label: "Teknis" },
+        { value: "Semi Teknis", label: "Semi Teknis" },
+        { value: "Sederhana", label: "Sederhana" },
+        { value: "Tadah Hujan", label: "Tadah Hujan" }
+      ]
+    },
     { 
       name: "jenisVarietas", 
-      label: "Jenis Varietas", 
+      label: "Jenis Varietas Padi", 
       type: "select", 
       required: true,
       options: [
         { value: "IR64", label: "IR64" },
         { value: "Ciherang", label: "Ciherang" },
         { value: "Inpari 32", label: "Inpari 32" },
-        { value: "Segreng", label: "Segreng" }
+        { value: "Segreng", label: "Segreng" },
+        { value: "Mapan", label: "Mapan" },
+        { value: "Mekongga", label: "Mekongga" }
       ]
     },
-    { name: "musimTanam", label: "Musim Tanam", type: "text", required: true, placeholder: "Contoh: Gadu 2024" },
-    { name: "hasilPanen", label: "Hasil Panen (Ton/Ha)", type: "number", required: true, placeholder: "Hasil panen per hektar" },
+    { name: "musimTanam", label: "Musim Tanam", type: "text", required: true, placeholder: "Contoh: Gadu 2024 atau Rendeng 2024" },
+    { name: "tanggalTanam", label: "Tanggal Tanam", type: "date", required: false },
+    { name: "tanggalPanen", label: "Tanggal Panen (Estimasi/Aktual)", type: "date", required: false },
+    { name: "hasilPanen", label: "Hasil Panen (Ton/Ha)", type: "number", required: true, placeholder: "Hasil panen per hektar", step: "0.1" },
     { 
       name: "statusTanam", 
-      label: "Status Tanam", 
+      label: "Status Pertumbuhan", 
       type: "select", 
       required: true,
       options: [
-        { value: "Panen", label: "Panen" },
-        { value: "Tanam", label: "Tanam" },
-        { value: "Vegetatif", label: "Vegetatif" },
-        { value: "Generatif", label: "Generatif" }
+        { value: "Persiapan", label: "Persiapan Lahan" },
+        { value: "Tanam", label: "Masa Tanam" },
+        { value: "Vegetatif", label: "Fase Vegetatif" },
+        { value: "Generatif", label: "Fase Generatif" },
+        { value: "Panen", label: "Siap Panen/Sudah Panen" },
+        { value: "Bera", label: "Masa Bera" }
       ]
-    }
+    },
+    { name: "catatan", label: "Catatan Tambahan", type: "textarea", required: false, placeholder: "Catatan kondisi lahan, kendala, atau informasi lainnya" }
   ]
 
   const getStatusColor = (status: string) => {
@@ -132,6 +188,8 @@ export const DataSawah = () => {
       case "Tanam": return "bg-blue-100 text-blue-800";
       case "Vegetatif": return "bg-yellow-100 text-yellow-800";
       case "Generatif": return "bg-purple-100 text-purple-800";
+      case "Persiapan": return "bg-orange-100 text-orange-800";
+      case "Bera": return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   }
@@ -172,12 +230,17 @@ export const DataSawah = () => {
         id: newId,
         nama: data.nama,
         petani: data.petani,
-        luas: parseFloat(data.luas),
+        luas: data.luas,
         koordinat: data.koordinat,
         jenisVarietas: data.jenisVarietas,
         musimTanam: data.musimTanam,
-        hasilPanen: parseFloat(data.hasilPanen),
-        statusTanam: data.statusTanam
+        hasilPanen: data.hasilPanen,
+        statusTanam: data.statusTanam,
+        tanggalTanam: data.tanggalTanam,
+        tanggalPanen: data.tanggalPanen,
+        irigasi: data.irigasi,
+        jenisLahan: data.jenisLahan,
+        catatan: data.catatan
       }
       setSawahData(prev => [...prev, newSawah])
       toast({
@@ -189,12 +252,17 @@ export const DataSawah = () => {
         ...selectedSawah,
         nama: data.nama,
         petani: data.petani,
-        luas: parseFloat(data.luas),
+        luas: data.luas,
         koordinat: data.koordinat,
         jenisVarietas: data.jenisVarietas,
         musimTanam: data.musimTanam,
-        hasilPanen: parseFloat(data.hasilPanen),
-        statusTanam: data.statusTanam
+        hasilPanen: data.hasilPanen,
+        statusTanam: data.statusTanam,
+        tanggalTanam: data.tanggalTanam,
+        tanggalPanen: data.tanggalPanen,
+        irigasi: data.irigasi,
+        jenisLahan: data.jenisLahan,
+        catatan: data.catatan
       }
       setSawahData(prev => prev.map(s => s.id === selectedSawah.id ? updatedSawah : s))
       toast({
@@ -219,6 +287,7 @@ export const DataSawah = () => {
           </Button>
         )
       },
+      cell: ({ row }) => <div className="max-w-[200px] truncate">{row.getValue("nama")}</div>,
     },
     {
       accessorKey: "petani",
@@ -228,10 +297,6 @@ export const DataSawah = () => {
       accessorKey: "luas",
       header: "Luas",
       cell: ({ row }) => <div>{row.getValue("luas")} Ha</div>,
-    },
-    {
-      accessorKey: "koordinat",
-      header: "Koordinat",
     },
     {
       accessorKey: "jenisVarietas",
@@ -301,7 +366,7 @@ export const DataSawah = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Data Sawah</h2>
-        <p className="text-gray-600">Kelola data lahan sawah dengan fitur CRUD lengkap</p>
+        <p className="text-gray-600">Kelola data lahan sawah dengan fitur CRUD lengkap dan informasi detail</p>
       </div>
 
       <DataTable
@@ -318,10 +383,11 @@ export const DataSawah = () => {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
         fields={formFields}
-        title={formMode === "create" ? "Tambah Sawah Baru" : "Edit Data Sawah"}
-        description={formMode === "create" ? "Masukkan data sawah baru" : "Perbarui data sawah"}
+        title={formMode === "create" ? "Tambah Data Sawah Baru" : "Edit Data Sawah"}
+        description={formMode === "create" ? "Masukkan data sawah baru dengan informasi lengkap" : "Perbarui data sawah"}
         initialData={selectedSawah}
         mode={formMode}
+        wide={true}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

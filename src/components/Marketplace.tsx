@@ -112,8 +112,8 @@ export const Marketplace = () => {
         nama: data.nama,
         petani: data.petani,
         lokasi: data.lokasi,
-        harga: parseInt(data.harga),
-        stok: parseInt(data.stok),
+        harga: data.harga,
+        stok: data.stok,
         satuan: data.satuan,
         kualitas: data.kualitas,
         deskripsi: data.deskripsi,
@@ -130,8 +130,8 @@ export const Marketplace = () => {
         nama: data.nama,
         petani: data.petani,
         lokasi: data.lokasi,
-        harga: parseInt(data.harga),
-        stok: parseInt(data.stok),
+        harga: data.harga,
+        stok: data.stok,
         satuan: data.satuan,
         kualitas: data.kualitas,
         deskripsi: data.deskripsi,
@@ -156,7 +156,7 @@ export const Marketplace = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Marketplace Hasil Pertanian</h2>
-        <p className="text-gray-600">Kelola produk marketplace dengan fitur CRUD lengkap</p>
+        <p className="text-gray-600">Kelola produk marketplace dengan fitur CRUD lengkap dan modal yang lebih luas</p>
       </div>
 
       <DataTable
@@ -174,9 +174,10 @@ export const Marketplace = () => {
         onSubmit={handleFormSubmit}
         fields={formFields}
         title={formMode === "create" ? "Tambah Produk Baru" : "Edit Produk"}
-        description={formMode === "create" ? "Masukkan data produk baru" : "Perbarui data produk"}
+        description={formMode === "create" ? "Masukkan data produk baru dengan lengkap" : "Perbarui data produk"}
         initialData={selectedProduk}
         mode={formMode}
+        wide={true}
       />
 
       <ProductDetailDialog

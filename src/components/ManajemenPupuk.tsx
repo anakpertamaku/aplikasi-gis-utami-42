@@ -4,16 +4,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Beaker, Package2, Calendar, AlertTriangle, Plus, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CrudForm, FormField } from "@/components/ui/crud-form";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Beaker, Package2, Calendar, AlertTriangle, Plus, Eye, Edit, Trash2 } from "lucide-react";
+
+interface Pupuk {
+  id: number;
+  nama: string;
+  jenis: string;
+  stok: number;
+  satuan: string;
+  harga: number;
+  supplier: string;
+  tanggalBeli: string;
+  tanggalKadaluarsa: string;
+  lokasi: string;
+  status: string;
+  penggunaan: Array<{
+    tanggal: string;
+    jumlah: number;
+    petani: string;
+    lahan: string;
+  }>;
+}
 
 export const ManajemenPupuk = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [selectedPupuk, setSelectedPupuk] = useState<Pupuk | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pupukToDelete, setPupukToDelete] = useState<Pupuk | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [pupukDetail, setPupukDetail] = useState<Pupuk | null>(null);
 
-  const pupukData = [
+  const [pupukData, setPupukData] = useState<Pupuk[]>([
     {
       id: 1,
       nama: "Urea",
@@ -79,12 +116,142 @@ export const ManajemenPupuk = () => {
         { tanggal: "2024-01-10", jumlah: 35, petani: "Budi Santoso", lahan: "Sawah A" }
       ]
     }
+  ]);
+
+  const formFields: FormField[] = [
+    { name: "nama", label: "Nama Pupuk", type: "text", required: true, placeholder: "Masukkan nama pupuk" },
+    { 
+      name: "jenis", 
+      label: "Jenis Pupuk", 
+      type: "select", 
+      required: true,
+      options: [
+        { value: "Nitrogen", label: "Nitrogen" },
+        { value: "Fosfor", label: "Fosfor" },
+        { value: "Kalium", label: "Kalium" },
+        { value: "Majemuk", label: "Majemuk" }
+      ]
+    },
+    { name: "stok", label: "Stok", type: "number", required: true, placeholder: "Jumlah stok" },
+    { 
+      name: "satuan", 
+      label: "Satuan", 
+      type: "select", 
+      required: true,
+      options: [
+        { value: "kg", label: "Kilogram (kg)" },
+        { value: "ton", label: "Ton" },
+        { value: "karung", label: "Karung" }
+      ]
+    },
+    { name: "harga", label: "Harga per Satuan", type: "number", required: true, placeholder: "Harga dalam rupiah" },
+    { name: "supplier", label: "Supplier", type: "text", required: true, placeholder: "Nama supplier" },
+    { name: "tanggalBeli", label: "Tanggal Pembelian", type: "date", required: true },
+    { name: "tanggalKadaluarsa", label: "Tanggal Kadaluarsa", type: "date", required: true },
+    { 
+      name: "lokasi", 
+      label: "Lokasi Penyimpanan", 
+      type: "select", 
+      required: true,
+      options: [
+        { value: "Gudang A", label: "Gudang A" },
+        { value: "Gudang B", label: "Gudang B" },
+        { value: "Gudang C", label: "Gudang C" }
+      ]
+    }
   ];
 
   const filteredPupuk = pupukData.filter(pupuk =>
     pupuk.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
     pupuk.jenis.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAdd = () => {
+    setFormMode("create");
+    setSelectedPupuk(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (pupuk: Pupuk) => {
+    setFormMode("edit");
+    setSelectedPupuk(pupuk);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (pupuk: Pupuk) => {
+    setPupukToDelete(pupuk);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleViewDetail = (pupuk: Pupuk) => {
+    setPupukDetail(pupuk);
+    setDetailDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (pupukToDelete) {
+      setPupukData(prev => prev.filter(p => p.id !== pupukToDelete.id));
+      toast({
+        title: "Berhasil",
+        description: `Pupuk ${pupukToDelete.nama} berhasil dihapus.`,
+      });
+      setPupukToDelete(null);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const updateStockStatus = (stok: number) => {
+    if (stok === 0) return "Habis";
+    if (stok < 100) return "Segera Habis";
+    return "Tersedia";
+  };
+
+  const handleFormSubmit = (data: any) => {
+    const status = updateStockStatus(data.stok);
+    
+    if (formMode === "create") {
+      const newId = Math.max(...pupukData.map(p => p.id)) + 1;
+      const newPupuk: Pupuk = {
+        id: newId,
+        nama: data.nama,
+        jenis: data.jenis,
+        stok: data.stok,
+        satuan: data.satuan,
+        harga: data.harga,
+        supplier: data.supplier,
+        tanggalBeli: data.tanggalBeli,
+        tanggalKadaluarsa: data.tanggalKadaluarsa,
+        lokasi: data.lokasi,
+        status: status,
+        penggunaan: []
+      };
+      setPupukData(prev => [...prev, newPupuk]);
+      toast({
+        title: "Berhasil",
+        description: `Pupuk ${data.nama} berhasil ditambahkan.`,
+      });
+    } else if (formMode === "edit" && selectedPupuk) {
+      const updatedPupuk: Pupuk = {
+        ...selectedPupuk,
+        nama: data.nama,
+        jenis: data.jenis,
+        stok: data.stok,
+        satuan: data.satuan,
+        harga: data.harga,
+        supplier: data.supplier,
+        tanggalBeli: data.tanggalBeli,
+        tanggalKadaluarsa: data.tanggalKadaluarsa,
+        lokasi: data.lokasi,
+        status: status
+      };
+      setPupukData(prev => prev.map(p => p.id === selectedPupuk.id ? updatedPupuk : p));
+      toast({
+        title: "Berhasil",
+        description: `Pupuk ${data.nama} berhasil diperbarui.`,
+      });
+    }
+    setIsFormOpen(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,58 +288,10 @@ export const ManajemenPupuk = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Pupuk
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Tambah Stok Pupuk Baru</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nama">Nama Pupuk</Label>
-                <Input id="nama" placeholder="Masukkan nama pupuk" />
-              </div>
-              <div>
-                <Label htmlFor="jenis">Jenis</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih jenis pupuk" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nitrogen">Nitrogen</SelectItem>
-                    <SelectItem value="fosfor">Fosfor</SelectItem>
-                    <SelectItem value="kalium">Kalium</SelectItem>
-                    <SelectItem value="majemuk">Majemuk</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="stok">Stok</Label>
-                  <Input id="stok" type="number" placeholder="0" />
-                </div>
-                <div>
-                  <Label htmlFor="harga">Harga/kg</Label>
-                  <Input id="harga" type="number" placeholder="0" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="supplier">Supplier</Label>
-                <Input id="supplier" placeholder="Nama supplier" />
-              </div>
-              <div>
-                <Label htmlFor="kadaluarsa">Tanggal Kadaluarsa</Label>
-                <Input id="kadaluarsa" type="date" />
-              </div>
-              <Button className="w-full">Simpan</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAdd}>
+          <Plus className="h-4 w-4 mr-2" />
+          Tambah Pupuk
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -203,7 +322,7 @@ export const ManajemenPupuk = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Harga</p>
-                    <p className="font-semibold">Rp {pupuk.harga.toLocaleString()}/kg</p>
+                    <p className="font-semibold">Rp {pupuk.harga.toLocaleString()}/{pupuk.satuan}</p>
                   </div>
                 </div>
 
@@ -230,56 +349,15 @@ export const ManajemenPupuk = () => {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="flex-1">
-                        <Eye className="h-4 w-4 mr-2" />
-                        Detail
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Detail Pupuk - {pupuk.nama}</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm font-medium">Jenis</p>
-                            <p className="text-sm text-gray-600">{pupuk.jenis}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Stok</p>
-                            <p className="text-sm text-gray-600">{pupuk.stok} {pupuk.satuan}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Supplier</p>
-                            <p className="text-sm text-gray-600">{pupuk.supplier}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Lokasi</p>
-                            <p className="text-sm text-gray-600">{pupuk.lokasi}</p>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <p className="text-sm font-medium mb-2">Riwayat Penggunaan</p>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {pupuk.penggunaan.map((usage, index) => (
-                              <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                <div>
-                                  <p className="text-sm font-medium">{usage.petani}</p>
-                                  <p className="text-xs text-gray-600">{usage.lahan} - {usage.tanggal}</p>
-                                </div>
-                                <p className="text-sm font-semibold">{usage.jumlah} kg</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button size="sm" disabled={pupuk.stok === 0}>
-                    Distribusi
+                  <Button size="sm" variant="outline" onClick={() => handleViewDetail(pupuk)} className="flex-1">
+                    <Eye className="h-4 w-4 mr-1" />
+                    Detail
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(pupuk)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleDelete(pupuk)} className="text-red-600 hover:text-red-700">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -287,6 +365,81 @@ export const ManajemenPupuk = () => {
           </Card>
         ))}
       </div>
+
+      <CrudForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        fields={formFields}
+        title={formMode === "create" ? "Tambah Pupuk Baru" : "Edit Data Pupuk"}
+        description={formMode === "create" ? "Masukkan data pupuk baru" : "Perbarui data pupuk"}
+        initialData={selectedPupuk}
+        mode={formMode}
+        wide={true}
+      />
+
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detail Pupuk - {pupukDetail?.nama}</DialogTitle>
+          </DialogHeader>
+          {pupukDetail && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Jenis</p>
+                  <p className="text-sm text-gray-600">{pupukDetail.jenis}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Stok</p>
+                  <p className="text-sm text-gray-600">{pupukDetail.stok} {pupukDetail.satuan}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Supplier</p>
+                  <p className="text-sm text-gray-600">{pupukDetail.supplier}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Lokasi</p>
+                  <p className="text-sm text-gray-600">{pupukDetail.lokasi}</p>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium mb-2">Riwayat Penggunaan</p>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {pupukDetail.penggunaan.map((usage, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div>
+                        <p className="text-sm font-medium">{usage.petani}</p>
+                        <p className="text-xs text-gray-600">{usage.lahan} - {usage.tanggal}</p>
+                      </div>
+                      <p className="text-sm font-semibold">{usage.jumlah} kg</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Data Pupuk</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus pupuk {pupukToDelete?.nama}? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
